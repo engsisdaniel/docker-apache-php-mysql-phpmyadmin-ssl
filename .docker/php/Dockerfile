@@ -20,6 +20,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   freetds-bin \
   tdsodbc
 
+# Instala o node
+RUN apt-get update -yq \
+  && apt-get install curl gnupg -yq \
+  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+  && apt-get install -yq nodejs npm
+
 RUN docker-php-ext-configure gd \
   --with-png-dir=/usr/include/ \
   --with-jpeg-dir=/usr/include/ \
