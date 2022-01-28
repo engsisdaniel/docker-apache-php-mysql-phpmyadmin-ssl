@@ -20,11 +20,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   freetds-bin \
   tdsodbc
 
-# Instala o node
+# Instala o node 16.13.2
 RUN apt-get update -yq \
-  && apt-get install curl gnupg -yq \
-  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
-  && apt-get install -yq nodejs npm
+  && apt install -yq wget \
+  && wget https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz \
+  && apt-get install xz-utils \
+  && tar -C /usr/local --strip-components 1 -xJf node-v16.13.2-linux-x64.tar.xz
 
 RUN docker-php-ext-configure gd \
   --with-png-dir=/usr/include/ \
