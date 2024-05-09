@@ -1,9 +1,8 @@
 version: "3"
 services:
-  php:
+  php-apache:
     build: .docker/php
     container_name: "apache-srv"
-    image: server-apache
     volumes:
       - .docker/apache/server.pem:/etc/ssl/certs/server.pem
       - .docker/apache/server-key.pem:/etc/ssl/private/server-key.pem
@@ -11,7 +10,7 @@ services:
       - ./src:/var/www/html
     ports:
       - 80:80
-#      - 443:443
+      #      - 443:443
     networks:
       - mynetwork
 

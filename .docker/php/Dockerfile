@@ -1,64 +1,29 @@
-FROM php:7.3.7-apache
+FROM php:8.0-apache
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  autoconf \
-  build-essential \
-  apt-utils \
-  zlib1g-dev \
-  libzip-dev \
-  unzip \
-  zip \
-  libmagick++-dev \
-  libmagickwand-dev \
-  libpq-dev \
-  libfreetype6-dev \
-  libjpeg62-turbo-dev \
-  libpng-dev \
-  unixodbc \
-  unixodbc-dev \
-  freetds-dev \
-  freetds-bin \
-  tdsodbc
+RUN apt-get update && apt-get install -y  \
+    libfreetype6-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libwebp-dev \
+    --no-install-recommends \
+    && docker-php-ext-enable opcache \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql -j$(nproc) gd \
+    && apt-get autoclean -y \
+    && rm -rf /var/lib/apt/lists/* 
 
-# Instala o node 16.13.2
-RUN apt-get update -yq \
-  && apt install -yq wget \
-  && wget https://nodejs.org/dist/v16.13.2/node-v16.13.2-linux-x64.tar.xz \
-  && apt-get install xz-utils \
-  && tar -C /usr/local --strip-components 1 -xJf node-v16.13.2-linux-x64.tar.xz
+# Update apache conf to point to application public directory
+ENV APACHE_DOCUMENT_ROOT=/var/www/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-RUN docker-php-ext-configure gd \
-  --with-png-dir=/usr/include/ \
-  --with-jpeg-dir=/usr/include/ \
-  --with-freetype-dir=/usr/include/
-
-RUN docker-php-ext-configure zip --with-libzip
-
-RUN docker-php-ext-configure pdo_dblib --with-libdir=/lib/x86_64-linux-gnu
-
-RUN docker-php-ext-configure soap --enable-soap 
-
-RUN docker-php-ext-install gd intl  pdo_mysql pdo_pgsql mysqli zip pdo_dblib soap
-
-RUN pecl install imagick-3.4.3
-
-RUN pecl install xdebug-3.1.5 && docker-php-ext-enable xdebug
-
-RUN docker-php-ext-enable imagick pdo_dblib
-
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-#upload
+# Update uploads config
 RUN echo "file_uploads = On\n" \
-         "memory_limit = 500M\n" \
-         "upload_max_filesize = 500M\n" \
-         "post_max_size = 500M\n" \
-         "max_execution_time = 600\n" \
-         "max_input_vars=5000\n" \
+         "memory_limit = 1024M\n" \
+         "upload_max_filesize = 512M\n" \
+         "post_max_size = 512M\n" \
+         "max_execution_time = 1200\n" \
          > /usr/local/etc/php/conf.d/uploads.ini
-
-# Clear package lists
-RUN apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 # Permissions
 RUN chown -R root:www-data /var/www/html
@@ -68,8 +33,10 @@ RUN find /var/www/html -type f -exec chmod u+rw,g+rw,o+r {} +
 
 WORKDIR /var/www/html
 
-RUN a2enmod rewrite
-RUN a2enmod ssl
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Enable headers module
+RUN a2enmod rewrite headers 
 
 EXPOSE 80
 EXPOSE 443
