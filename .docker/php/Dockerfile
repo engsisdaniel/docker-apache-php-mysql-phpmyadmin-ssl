@@ -36,7 +36,9 @@ WORKDIR /var/www/html
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Enable headers module
-RUN a2enmod rewrite headers 
+RUN a2enmod rewrite headers
+
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 EXPOSE 80
 EXPOSE 443
