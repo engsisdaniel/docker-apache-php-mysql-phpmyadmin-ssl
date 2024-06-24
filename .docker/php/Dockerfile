@@ -12,6 +12,14 @@ RUN apt-get update && apt-get install -y  \
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/* 
 
+#install some base extensions
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    libzip-dev \
+    zip \
+    && docker-php-ext-install zip
+
 # Update apache conf to point to application public directory
 ENV APACHE_DOCUMENT_ROOT=/var/www/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
@@ -38,7 +46,14 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 # Enable headers module
 RUN a2enmod rewrite headers
 
+
+# install composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
+# install git
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
 
 EXPOSE 80
 EXPOSE 443
